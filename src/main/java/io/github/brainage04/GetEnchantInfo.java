@@ -3,18 +3,16 @@ package io.github.brainage04;
 import io.github.brainage04.commands.core.ModCommands;
 import io.github.brainage04.config.ModConfig;
 import io.github.brainage04.config.ModConfigManager;
-import io.github.brainage04.event.ModWorldEvents;
 import net.fabricmc.api.ClientModInitializer;
-
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.item.Items;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,37 +29,30 @@ public class GetEnchantInfo implements ClientModInitializer {
 		LOGGER.info("{} initializing...", MOD_NAME);
 
 		ModCommands.initialize();
-		ModWorldEvents.initialize();
 
 		ItemTooltipCallback.EVENT.register((stack, context, type, lines) -> {
-			Set<RegistryEntry<Enchantment>> enchantments;
+			Set<Holder<Enchantment>> enchantments;
 			if (stack.getItem() == Items.ENCHANTED_BOOK) {
-				ItemEnchantmentsComponent storedEnchantments = stack.getComponents().get(DataComponentTypes.STORED_ENCHANTMENTS);
+				ItemEnchantments storedEnchantments = stack.getComponents().get(DataComponents.STORED_ENCHANTMENTS);
 				if (storedEnchantments == null) return;
 
-				enchantments = storedEnchantments.getEnchantments();
+				enchantments = storedEnchantments.keySet();
 			} else {
-				enchantments = EnchantmentHelper.getEnchantments(stack).getEnchantments();
+				enchantments = stack.getEnchantments().keySet();
 			}
 
 			for (int i = 0; i < lines.size(); i++) {
-				Text line = lines.get(i);
+				Component line = lines.get(i);
 
-				for (RegistryEntry<Enchantment> entry : enchantments) {
+				for (Holder<Enchantment> entry : enchantments) {
 					Enchantment enchantment = entry.value();
+					int level = stack.getItem() == Items.ENCHANTED_BOOK
+							? stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY).getLevel(entry)
+							: EnchantmentHelper.getItemEnchantmentLevel(entry, stack);
 
-					int level;
-					if (stack.getItem() == Items.ENCHANTED_BOOK) {
-						ItemEnchantmentsComponent storedEnchantments = stack.getComponents().get(DataComponentTypes.STORED_ENCHANTMENTS);
-						if (storedEnchantments == null) continue;
-
-						level = storedEnchantments.getLevel(entry);
-					} else {
-						level = EnchantmentHelper.getLevel(entry, stack);
-					}
-
-					if (line.getString().startsWith(Enchantment.getName(entry, level).getString()) && level == enchantment.getMaxLevel()) {
-						lines.set(i, line.copy().formatted(Formatting.BOLD));
+					if (line.getString().startsWith(Enchantment.getFullname(entry, level).getString())
+							&& level == enchantment.getMaxLevel()) {
+						lines.set(i, line.copy().withStyle(ChatFormatting.BOLD));
 					}
 				}
 			}

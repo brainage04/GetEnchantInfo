@@ -1,39 +1,31 @@
 package io.github.brainage04.commands;
 
+import com.mojang.datafixers.util.Pair;
 import io.github.brainage04.util.EnchantmentUtils;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Pair;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 public class GetEnchantsCommand {
     public static int execute(FabricClientCommandSource source, ItemStack itemStack) {
-        Optional<Registry<Enchantment>> optionalEnchantmentRegistry = source.getWorld().getRegistryManager().getOptional(RegistryKeys.ENCHANTMENT);
-
-        if (optionalEnchantmentRegistry.isEmpty()) {
-            source.sendError(Text.literal("Enchantment registry could not be found!"));
-
-            return 0;
-        }
-
-        Registry<Enchantment> enchantmentRegistry = optionalEnchantmentRegistry.get();
+        Registry<Enchantment> enchantmentRegistry = source.getClient().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        syncBlacklist(enchantmentRegistry);
 
         List<Enchantment> acceptableEnchantments = new ArrayList<>();
         for (Enchantment enchantment : enchantmentRegistry) {
             if (BlacklistedEnchantsCommand.getBlacklistedEnchants().contains(enchantment)) continue;
 
-            if (enchantment.isAcceptableItem(itemStack)) {
+            if (enchantment.canEnchant(itemStack)) {
                 acceptableEnchantments.add(enchantment);
             }
         }
@@ -46,7 +38,7 @@ public class GetEnchantsCommand {
             for (int j = i + 1; j < n; j++) {
                 Enchantment b = acceptableEnchantments.get(j);
 
-                if (!Enchantment.canBeCombined(enchantmentRegistry.getEntry(a), enchantmentRegistry.getEntry(b))) {
+                if (!Enchantment.areCompatible(enchantmentRegistry.wrapAsHolder(a), enchantmentRegistry.wrapAsHolder(b))) {
                     conflicts.add(new Pair<>(a, b));
                 }
             }
@@ -60,44 +52,66 @@ public class GetEnchantsCommand {
         }
 
         if (mergedConflicts.isEmpty() && acceptableEnchantments.isEmpty()) {
-            source.sendError(Text.literal("No acceptable enchantments found!"));
+            source.sendError(Component.literal("No acceptable enchantments found!"));
         } else {
-            source.sendFeedback(Text.literal("Acceptable enchants for ")
-                    .append(itemStack.getName())
+            source.sendFeedback(Component.literal("Acceptable enchants for ")
+                    .append(itemStack.getHoverName())
                     .append(":")
-                    .formatted(Formatting.BOLD));
+                    .withStyle(ChatFormatting.BOLD));
 
             if (!mergedConflicts.isEmpty()) {
-                source.sendFeedback(Text.literal("Conflicting enchantments (choose one per list):"));
+                source.sendFeedback(Component.literal("Conflicting enchantments (choose one per list):"));
 
                 for (Set<Enchantment> conflictSet : mergedConflicts) {
-                    source.sendFeedback(Text.literal(" - ")
+                    source.sendFeedback(Component.literal(" - ")
                             .append(EnchantmentUtils.joinEnchantmentNames(enchantmentRegistry, conflictSet, itemStack)));
                 }
             }
 
             if (!acceptableEnchantments.isEmpty()) {
-                sendEnchantmentMessage(source, itemStack, acceptableEnchantments, enchantmentRegistry, Text.literal("Enchantments with no conflicts:"));
+                sendEnchantmentMessage(
+                        source,
+                        itemStack,
+                        acceptableEnchantments,
+                        enchantmentRegistry,
+                        Component.literal("Enchantments with no conflicts:")
+                );
             }
         }
 
         return 1;
     }
 
-    private static void sendEnchantmentMessage(FabricClientCommandSource source, ItemStack itemStack, List<Enchantment> acceptableEnchantments, Registry<Enchantment> enchantmentRegistry, Text prefix) {
+    private static void sendEnchantmentMessage(
+            FabricClientCommandSource source,
+            ItemStack itemStack,
+            List<Enchantment> acceptableEnchantments,
+            Registry<Enchantment> enchantmentRegistry,
+            Component prefix
+    ) {
         source.sendFeedback(prefix);
 
         for (Enchantment enchantment : acceptableEnchantments) {
-            source.sendFeedback(Text.literal(" - ")
+            source.sendFeedback(Component.literal(" - ")
                     .append(EnchantmentUtils.getEnchantmentName(enchantmentRegistry, enchantment, itemStack)));
         }
     }
 
-    public static int execute(FabricClientCommandSource source, RegistryEntry<Item> item) {
-        return execute(source, item.value().getDefaultStack());
+    public static int execute(FabricClientCommandSource source, Holder<Item> item) {
+        return execute(source, item.value().getDefaultInstance());
     }
 
     public static int execute(FabricClientCommandSource source) {
-        return execute(source, source.getPlayer().getInventory().getSelectedStack());
+        return execute(source, source.getPlayer().getInventory().getSelectedItem());
+    }
+
+    private static void syncBlacklist(Registry<Enchantment> enchantmentRegistry) {
+        BlacklistedEnchantsCommand.getBlacklistedEnchants().clear();
+
+        for (String string : io.github.brainage04.GetEnchantInfo.MOD_CONFIG.blacklistedEnchantmentIds) {
+            enchantmentRegistry
+                    .getOptional(net.minecraft.resources.Identifier.parse(string))
+                    .ifPresent(BlacklistedEnchantsCommand.getBlacklistedEnchants()::add);
+        }
     }
 }

@@ -4,22 +4,22 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import io.github.brainage04.commands.BlacklistedEnchantsCommand;
 import io.github.brainage04.commands.GetEnchantInfoCommand;
 import io.github.brainage04.commands.GetEnchantsCommand;
-import io.github.brainage04.commands.core.argument.ClientRegistryEntryReferenceArgumentType;
+import io.github.brainage04.commands.core.argument.ClientHolderReferenceArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.core.registries.Registries;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
 public class ModCommands {
     public static void initialize() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
                         literal("getenchantinfo")
-                                .then(argument("enchantmentId", ClientRegistryEntryReferenceArgumentType.registryEntry(registryAccess, RegistryKeys.ENCHANTMENT))
+                                .then(argument("enchantmentId", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ENCHANTMENT))
                                         .executes(context ->
                                                 GetEnchantInfoCommand.execute(
                                                         context.getSource(),
-                                                        ClientRegistryEntryReferenceArgumentType.getEnchantment(context, "enchantmentId")
+                                                        ClientHolderReferenceArgumentType.getEnchantment(context, "enchantmentId")
                                                 )
                                         )
                                 )
@@ -41,11 +41,11 @@ public class ModCommands {
                                                 context.getSource()
                                         )
                                 )
-                                .then(argument("item", ClientRegistryEntryReferenceArgumentType.registryEntry(registryAccess, RegistryKeys.ITEM))
+                                .then(argument("item", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ITEM))
                                         .executes(context ->
                                                 GetEnchantsCommand.execute(
                                                         context.getSource(),
-                                                        ClientRegistryEntryReferenceArgumentType.getItem(context, "item")
+                                                        ClientHolderReferenceArgumentType.getItem(context, "item")
                                                 )
                                         )
                                 )
@@ -55,21 +55,21 @@ public class ModCommands {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
                         literal("blacklistedenchants")
                                 .then(literal("add")
-                                        .then(argument("enchantmentId", ClientRegistryEntryReferenceArgumentType.registryEntry(registryAccess, RegistryKeys.ENCHANTMENT))
+                                        .then(argument("enchantmentId", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ENCHANTMENT))
                                                 .executes(context ->
                                                         BlacklistedEnchantsCommand.executeAdd(
                                                                 context.getSource(),
-                                                                ClientRegistryEntryReferenceArgumentType.getEnchantment(context, "enchantmentId")
+                                                                ClientHolderReferenceArgumentType.getEnchantment(context, "enchantmentId")
                                                         )
                                                 )
                                         )
                                 )
                                 .then(literal("remove")
-                                        .then(argument("enchantmentId", ClientRegistryEntryReferenceArgumentType.registryEntry(registryAccess, RegistryKeys.ENCHANTMENT))
+                                        .then(argument("enchantmentId", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ENCHANTMENT))
                                                 .executes(context ->
                                                         BlacklistedEnchantsCommand.executeRemove(
                                                                 context.getSource(),
-                                                                ClientRegistryEntryReferenceArgumentType.getEnchantment(context, "enchantmentId")
+                                                                ClientHolderReferenceArgumentType.getEnchantment(context, "enchantmentId")
                                                         )
                                                 )
                                         )

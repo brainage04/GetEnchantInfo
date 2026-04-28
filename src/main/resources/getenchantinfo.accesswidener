@@ -1,2 +1,2 @@
-accessWidener v2 named
-accessible field net/minecraft/enchantment/Enchantment description Lnet/minecraft/text/Text;
+accessWidener v2 official
+accessible method net/minecraft/world/item/enchantment/Enchantment description ()Lnet/minecraft/network/chat/Component;

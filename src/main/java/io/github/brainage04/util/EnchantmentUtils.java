@@ -1,32 +1,45 @@
 package io.github.brainage04.util;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.EnchantmentTags;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.Texts;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Pair;
+import com.mojang.datafixers.util.Pair;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.tags.EnchantmentTags;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class EnchantmentUtils {
-    public static Text getEnchantmentName(Registry<Enchantment> enchantmentRegistry, Enchantment enchantment, ItemStack itemStack) {
-        MutableText text = Text.empty();
-        Text enchantmentName = Enchantment.getName(enchantmentRegistry.getEntry(enchantment), enchantment.getMaxLevel());
+    public static Component getEnchantmentName(
+            Registry<Enchantment> enchantmentRegistry,
+            Enchantment enchantment,
+            ItemStack itemStack
+    ) {
+        Holder<Enchantment> enchantmentHolder = enchantmentRegistry.wrapAsHolder(enchantment);
+        MutableComponent text = Component.empty();
+        Component enchantmentName = Enchantment.getFullname(enchantmentHolder, enchantment.getMaxLevel());
 
-        if (itemStack.getEnchantments().getEnchantments().contains(enchantmentRegistry.getEntry(enchantment))) {
-            if (itemStack.getEnchantments().getLevel(enchantmentRegistry.getEntry(enchantment)) == enchantment.getMaxLevel()) {
+        if (itemStack.getEnchantments().keySet().contains(enchantmentHolder)) {
+            int currentLevel = itemStack.getEnchantments().getLevel(enchantmentHolder);
+
+            if (currentLevel == enchantment.getMaxLevel()) {
                 text = text.append("You already have ")
                         .append(enchantmentName);
             } else {
                 text = text.append(enchantmentName)
                         .append(" - you have ")
-                        .append(Enchantment.getName(enchantmentRegistry.getEntry(enchantment), itemStack.getEnchantments().getLevel(enchantmentRegistry.getEntry(enchantment))));
+                        .append(Enchantment.getFullname(enchantmentHolder, currentLevel));
             }
         } else {
             text = text.append(enchantmentName);
@@ -35,31 +48,26 @@ public class EnchantmentUtils {
         return text;
     }
 
-    public static MutableText getEnchantmentName(RegistryEntry<Enchantment> enchantmentRegistryEntry) {
-        MutableText mutableText = enchantmentRegistryEntry.value().description.copy();
-        if (enchantmentRegistryEntry.isIn(EnchantmentTags.CURSE)) {
-            Texts.setStyleIfAbsent(mutableText, Style.EMPTY.withColor(Formatting.RED));
-        } else {
-            Texts.setStyleIfAbsent(mutableText, Style.EMPTY.withColor(Formatting.GRAY));
-        }
+    public static MutableComponent getEnchantmentName(Holder<Enchantment> enchantmentHolder) {
+        ChatFormatting formatting = enchantmentHolder.is(EnchantmentTags.CURSE)
+                ? ChatFormatting.RED
+                : ChatFormatting.GRAY;
 
-        return mutableText;
+        return enchantmentHolder.value().description().copy().withStyle(formatting);
     }
 
     public static List<Set<Enchantment>> mergeConflicts(List<Pair<Enchantment, Enchantment>> pairs) {
-        // 1. Build adjacency map
         Map<Enchantment, Set<Enchantment>> graph = new HashMap<>();
         for (Pair<Enchantment, Enchantment> pair : pairs) {
-            Enchantment a = pair.getLeft(), b = pair.getRight();
-            graph.computeIfAbsent(a, k -> new HashSet<>()).add(b);
-            graph.computeIfAbsent(b, k -> new HashSet<>()).add(a);
+            Enchantment a = pair.getFirst();
+            Enchantment b = pair.getSecond();
+            graph.computeIfAbsent(a, ignored -> new HashSet<>()).add(b);
+            graph.computeIfAbsent(b, ignored -> new HashSet<>()).add(a);
         }
 
-        // 2. Track visited nodes
         Set<Enchantment> visited = new HashSet<>();
         List<Set<Enchantment>> components = new ArrayList<>();
 
-        // 3. For each node, if not visited, flood-fill its component
         for (Enchantment node : graph.keySet()) {
             if (!visited.contains(node)) {
                 Set<Enchantment> comp = new HashSet<>();
@@ -84,8 +92,12 @@ public class EnchantmentUtils {
         return components;
     }
 
-    public static Text joinEnchantmentNames(Registry<Enchantment> enchantmentRegistry, Set<Enchantment> enchantments, ItemStack itemStack) {
-        MutableText text = Text.empty();
+    public static Component joinEnchantmentNames(
+            Registry<Enchantment> enchantmentRegistry,
+            Set<Enchantment> enchantments,
+            ItemStack itemStack
+    ) {
+        MutableComponent text = Component.empty();
 
         Iterator<Enchantment> iterator = enchantments.iterator();
         while (iterator.hasNext()) {

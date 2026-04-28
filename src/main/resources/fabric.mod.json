@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
-	"id": "getenchantinfo",
-	"version": "${version}",
-	"name": "GetEnchantInfo",
+	"id": "${mod_id}",
+	"version": "${mod_version}",
+	"name": "${mod_name}",
 	"description": "A mod that adds commands that provide helpful information related to enchantments.",
 	"authors": [
 		"brainage04"
@@ -13,17 +13,17 @@
 	},
 	"license": "MIT",
 	"icon": "assets/getenchantinfo/icon.png",
-	"environment": "*",
+	"environment": "client",
 	"entrypoints": {
 		"client": [
 			"io.github.brainage04.GetEnchantInfo"
 		]
 	},
 	"depends": {
-		"fabricloader": ">=0.16.13",
-		"minecraft": "~1.21.5",
-		"java": ">=21",
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=${java_version}",
 		"fabric-api": "*"
 	},
-	"accessWidener" : "getenchantinfo.accesswidener"
+	"accessWidener": "getenchantinfo.accesswidener"
 }
