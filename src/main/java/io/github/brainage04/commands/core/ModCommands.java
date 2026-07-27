@@ -1,87 +1,36 @@
 package io.github.brainage04.commands.core;
-
 import com.mojang.brigadier.arguments.StringArgumentType;
-import io.github.brainage04.commands.BlacklistedEnchantsCommand;
-import io.github.brainage04.commands.GetEnchantInfoCommand;
-import io.github.brainage04.commands.GetEnchantsCommand;
+import io.github.brainage04.commands.*;
 import io.github.brainage04.commands.core.argument.ClientHolderReferenceArgumentType;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import io.github.brainage04.platform.ClientPlatform;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.enchantment.Enchantment;
+public final class ModCommands {
+    private ModCommands() {
+    }
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
-
-public class ModCommands {
-    public static void initialize() {
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-                        literal("getenchantinfo")
-                                .then(argument("enchantmentId", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ENCHANTMENT))
-                                        .executes(context ->
-                                                GetEnchantInfoCommand.execute(
-                                                        context.getSource(),
-                                                        ClientHolderReferenceArgumentType.getEnchantment(context, "enchantmentId")
-                                                )
-                                        )
-                                )
-                                .then(argument("enchantmentName", StringArgumentType.string())
-                                        .executes(context ->
-                                                GetEnchantInfoCommand.execute(
-                                                        context.getSource(),
-                                                        StringArgumentType.getString(context, "enchantmentName")
-                                                )
-                                        )
-                                )
-                )
-        );
-
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-                        literal("getenchants")
-                                .executes(context ->
-                                        GetEnchantsCommand.execute(
-                                                context.getSource()
-                                        )
-                                )
-                                .then(argument("item", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ITEM))
-                                        .executes(context ->
-                                                GetEnchantsCommand.execute(
-                                                        context.getSource(),
-                                                        ClientHolderReferenceArgumentType.getItem(context, "item")
-                                                )
-                                        )
-                                )
-                )
-        );
-
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
-                        literal("blacklistedenchants")
-                                .then(literal("add")
-                                        .then(argument("enchantmentId", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ENCHANTMENT))
-                                                .executes(context ->
-                                                        BlacklistedEnchantsCommand.executeAdd(
-                                                                context.getSource(),
-                                                                ClientHolderReferenceArgumentType.getEnchantment(context, "enchantmentId")
-                                                        )
-                                                )
-                                        )
-                                )
-                                .then(literal("remove")
-                                        .then(argument("enchantmentId", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ENCHANTMENT))
-                                                .executes(context ->
-                                                        BlacklistedEnchantsCommand.executeRemove(
-                                                                context.getSource(),
-                                                                ClientHolderReferenceArgumentType.getEnchantment(context, "enchantmentId")
-                                                        )
-                                                )
-                                        )
-                                )
-                                .then(literal("query")
-                                        .executes(context ->
-                                                BlacklistedEnchantsCommand.executeQuery(
-                                                        context.getSource()
-                                                )
-                                        )
-                                )
-                )
-        );
+    public static void initialize(ClientPlatform platform) {
+        platform.registerClientCommands((dispatcher, registryAccess) -> {
+            dispatcher.register(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("getenchantinfo")
+                    .then(RequiredArgumentBuilder.<SharedSuggestionProvider, Holder.Reference<Enchantment>>argument("enchantmentId", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ENCHANTMENT))
+                            .executes(c -> GetEnchantInfoCommand.execute(c.getSource(), ClientHolderReferenceArgumentType.getEnchantment(c, "enchantmentId"))))
+                    .then(RequiredArgumentBuilder.<SharedSuggestionProvider, String>argument("enchantmentName", StringArgumentType.string())
+                            .executes(c -> GetEnchantInfoCommand.execute(c.getSource(), StringArgumentType.getString(c, "enchantmentName")))));
+            dispatcher.register(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("getenchants")
+                    .executes(c -> GetEnchantsCommand.execute(c.getSource()))
+                    .then(RequiredArgumentBuilder.<SharedSuggestionProvider, Holder.Reference<Item>>argument("item", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ITEM))
+                            .executes(c -> GetEnchantsCommand.execute(c.getSource(), ClientHolderReferenceArgumentType.getItem(c, "item")))));
+            dispatcher.register(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("blacklistedenchants")
+                    .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("add").then(RequiredArgumentBuilder.<SharedSuggestionProvider, Holder.Reference<Enchantment>>argument("enchantmentId", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ENCHANTMENT))
+                            .executes(c -> BlacklistedEnchantsCommand.executeAdd(c.getSource(), ClientHolderReferenceArgumentType.getEnchantment(c, "enchantmentId")))))
+                    .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("remove").then(RequiredArgumentBuilder.<SharedSuggestionProvider, Holder.Reference<Enchantment>>argument("enchantmentId", ClientHolderReferenceArgumentType.registryEntry(registryAccess, Registries.ENCHANTMENT))
+                            .executes(c -> BlacklistedEnchantsCommand.executeRemove(c.getSource(), ClientHolderReferenceArgumentType.getEnchantment(c, "enchantmentId")))))
+                    .then(LiteralArgumentBuilder.<SharedSuggestionProvider>literal("query").executes(c -> BlacklistedEnchantsCommand.executeQuery(c.getSource()))));
+        });
     }
 }

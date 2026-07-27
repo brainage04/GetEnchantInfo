@@ -1,0 +1,22 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+[[mods]]
+modId="getenchantinfo"
+version="${file.jarVersion}"
+displayName="GetEnchantInfo"
+description="A mod that adds commands that provide helpful information related to enchantments."
+authors="brainage04"
+displayURL="https://github.com/brainage04/GetEnchantInfo"
+[[dependencies.getenchantinfo]]
+modId="neoforge"
+type="required"
+versionRange="[26.2,)"
+ordering="NONE"
+side="CLIENT"
+[[dependencies.getenchantinfo]]
+modId="minecraft"
+type="required"
+versionRange="[26.2]"
+ordering="NONE"
+side="CLIENT"

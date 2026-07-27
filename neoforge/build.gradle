@@ -1,0 +1,18 @@
+plugins { id 'dev.architectury.loom-no-remap'; id 'dev.architectury.loom'; id 'io.github.brainage04.mod-publishing' version "${fabricmoddingconventions_version}" }
+base { archivesName="${rootProject.archives_base_name}-neoforge" }
+sourceSets { main { java.srcDir project.file('src/main/java'); resources.srcDir project.file('src/main/resources') } }
+loom { neoForge { }; mods { main { sourceSet sourceSets.main; sourceSet project(':common').sourceSets.main } }; runs { client { runDir 'run/client' } } }
+configurations { common { canBeResolved=true; canBeConsumed=false }; compileClasspath.extendsFrom common }
+modPublishing {
+	version.set("${rootProject.mod_version}-neoforge")
+	releaseTag.set("v${rootProject.mod_version}")
+	displayName.set("${rootProject.mod_name} ${rootProject.mod_version} (NeoForge)")
+	modLoaders.set(['neoforge'])
+	fabricModJson.set(rootProject.layout.projectDirectory.file('fabric/build/resources/main/fabric.mod.json'))
+	licenseFile.set(rootProject.layout.projectDirectory.file('LICENSE'))
+	modrinth.projectBody.set(rootProject.layout.projectDirectory.file('README.md'))
+	modrinth.iconFile.set(rootProject.layout.projectDirectory.file('src/main/resources/assets/getenchantinfo/icon.png'))
+}
+tasks.named('validateModPublication') { dependsOn ':fabric:processResources' }
+dependencies { minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"; neoForge "net.neoforged:neoforge:${rootProject.neoforge_version}"; common(project(':common')) { transitive=false } }
+tasks.named('jar') { from project(':common').sourceSets.main.output; duplicatesStrategy=DuplicatesStrategy.EXCLUDE }; tasks.named('sourcesJar') { from project(':common').sourceSets.main.allSource; duplicatesStrategy=DuplicatesStrategy.EXCLUDE }; tasks.named('processResources') { duplicatesStrategy=DuplicatesStrategy.EXCLUDE }

@@ -8,7 +8,6 @@ import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.Dynamic3CommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.Holder;
@@ -48,7 +47,7 @@ public class ClientHolderReferenceArgumentType<T> implements ArgumentType<Holder
     }
 
     public static <T> Holder.Reference<T> getHolder(
-            CommandContext<FabricClientCommandSource> context,
+            CommandContext<net.minecraft.commands.SharedSuggestionProvider> context,
             String name,
             ResourceKey<Registry<T>> registryRef
     ) throws CommandSyntaxException {
@@ -63,14 +62,14 @@ public class ClientHolderReferenceArgumentType<T> implements ArgumentType<Holder
     }
 
     public static Holder.Reference<Enchantment> getEnchantment(
-            CommandContext<FabricClientCommandSource> context,
+            CommandContext<net.minecraft.commands.SharedSuggestionProvider> context,
             String name
     ) throws CommandSyntaxException {
         return getHolder(context, name, Registries.ENCHANTMENT);
     }
 
     public static Holder.Reference<Item> getItem(
-            CommandContext<FabricClientCommandSource> context,
+            CommandContext<net.minecraft.commands.SharedSuggestionProvider> context,
             String name
     ) throws CommandSyntaxException {
         return getHolder(context, name, Registries.ITEM);

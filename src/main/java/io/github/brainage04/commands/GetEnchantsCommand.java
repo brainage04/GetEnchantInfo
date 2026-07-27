@@ -1,8 +1,9 @@
 package io.github.brainage04.commands;
 
+import net.minecraft.client.Minecraft;
+
 import com.mojang.datafixers.util.Pair;
 import io.github.brainage04.util.EnchantmentUtils;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -17,8 +18,8 @@ import java.util.List;
 import java.util.Set;
 
 public class GetEnchantsCommand {
-    public static int execute(FabricClientCommandSource source, ItemStack itemStack) {
-        Registry<Enchantment> enchantmentRegistry = source.getClient().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+    public static int execute(net.minecraft.commands.SharedSuggestionProvider source, ItemStack itemStack) {
+        Registry<Enchantment> enchantmentRegistry = Minecraft.getInstance().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
         syncBlacklist(enchantmentRegistry);
 
         List<Enchantment> acceptableEnchantments = new ArrayList<>();
@@ -52,18 +53,18 @@ public class GetEnchantsCommand {
         }
 
         if (mergedConflicts.isEmpty() && acceptableEnchantments.isEmpty()) {
-            source.sendError(Component.literal("No acceptable enchantments found!"));
+            feedback(Component.literal("No acceptable enchantments found!"));
         } else {
-            source.sendFeedback(Component.literal("Acceptable enchants for ")
+            feedback(Component.literal("Acceptable enchants for ")
                     .append(itemStack.getHoverName())
                     .append(":")
                     .withStyle(ChatFormatting.BOLD));
 
             if (!mergedConflicts.isEmpty()) {
-                source.sendFeedback(Component.literal("Conflicting enchantments (choose one per list):"));
+                feedback(Component.literal("Conflicting enchantments (choose one per list):"));
 
                 for (Set<Enchantment> conflictSet : mergedConflicts) {
-                    source.sendFeedback(Component.literal(" - ")
+                    feedback(Component.literal(" - ")
                             .append(EnchantmentUtils.joinEnchantmentNames(enchantmentRegistry, conflictSet, itemStack)));
                 }
             }
@@ -83,26 +84,26 @@ public class GetEnchantsCommand {
     }
 
     private static void sendEnchantmentMessage(
-            FabricClientCommandSource source,
+            net.minecraft.commands.SharedSuggestionProvider source,
             ItemStack itemStack,
             List<Enchantment> acceptableEnchantments,
             Registry<Enchantment> enchantmentRegistry,
             Component prefix
     ) {
-        source.sendFeedback(prefix);
+        feedback(prefix);
 
         for (Enchantment enchantment : acceptableEnchantments) {
-            source.sendFeedback(Component.literal(" - ")
+            feedback(Component.literal(" - ")
                     .append(EnchantmentUtils.getEnchantmentName(enchantmentRegistry, enchantment, itemStack)));
         }
     }
 
-    public static int execute(FabricClientCommandSource source, Holder<Item> item) {
+    public static int execute(net.minecraft.commands.SharedSuggestionProvider source, Holder<Item> item) {
         return execute(source, item.value().getDefaultInstance());
     }
 
-    public static int execute(FabricClientCommandSource source) {
-        return execute(source, source.getPlayer().getInventory().getSelectedItem());
+    public static int execute(net.minecraft.commands.SharedSuggestionProvider source) {
+        return execute(source, Minecraft.getInstance().player.getInventory().getSelectedItem());
     }
 
     private static void syncBlacklist(Registry<Enchantment> enchantmentRegistry) {
@@ -114,4 +115,9 @@ public class GetEnchantsCommand {
                     .ifPresent(BlacklistedEnchantsCommand.getBlacklistedEnchants()::add);
         }
     }
+    private static void feedback(net.minecraft.network.chat.Component message) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null) minecraft.player.sendSystemMessage(message);
+    }
+
 }

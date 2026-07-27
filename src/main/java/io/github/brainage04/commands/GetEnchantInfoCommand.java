@@ -1,7 +1,8 @@
 package io.github.brainage04.commands;
 
+import net.minecraft.client.Minecraft;
+
 import io.github.brainage04.util.EnchantmentUtils;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -18,7 +19,7 @@ import java.util.List;
 
 public class GetEnchantInfoCommand {
     public static void sendEnchantmentInfo(
-            FabricClientCommandSource source,
+            net.minecraft.commands.SharedSuggestionProvider source,
             Registry<Enchantment> enchantmentRegistry,
             Enchantment enchantment
     ) {
@@ -27,21 +28,21 @@ public class GetEnchantInfoCommand {
 
         Holder<Enchantment> enchantmentHolder = enchantmentRegistry.wrapAsHolder(enchantment);
 
-        source.sendFeedback(Component.literal("Enchant info for ")
+        feedback(Component.literal("Enchant info for ")
                 .append(EnchantmentUtils.getEnchantmentName(enchantmentHolder))
                 .append(":")
                 .withStyle(ChatFormatting.BOLD));
 
-        source.sendFeedback(Component.literal("ID: %s".formatted(enchantmentId)));
-        source.sendFeedback(Component.literal("Max level: %d".formatted(enchantment.getMaxLevel())));
-        source.sendFeedback(Component.literal("Incompatible with: ")
+        feedback(Component.literal("ID: %s".formatted(enchantmentId)));
+        feedback(Component.literal("Max level: %d".formatted(enchantment.getMaxLevel())));
+        feedback(Component.literal("Incompatible with: ")
                 .append(joinIncompatibleEnchantmentNames(enchantmentRegistry, enchantment)));
-        source.sendFeedback(Component.literal("Applied to: ")
+        feedback(Component.literal("Applied to: ")
                 .append(joinItemNames(enchantment.getSupportedItems().stream().map(Holder::value).toList())));
     }
 
-    public static int execute(FabricClientCommandSource source, String desiredEnchantmentString) {
-        Registry<Enchantment> enchantmentRegistry = source.getClient().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+    public static int execute(net.minecraft.commands.SharedSuggestionProvider source, String desiredEnchantmentString) {
+        Registry<Enchantment> enchantmentRegistry = Minecraft.getInstance().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
 
         Enchantment exactMatch = null;
         List<Enchantment> potentialMatches = new ArrayList<>();
@@ -65,7 +66,7 @@ public class GetEnchantInfoCommand {
         }
 
         if (exactMatch != null) {
-            source.sendFeedback(Component.literal("Exact match found - ")
+            feedback(Component.literal("Exact match found - ")
                     .append(EnchantmentUtils.getEnchantmentName(enchantmentRegistry.wrapAsHolder(exactMatch))));
 
             sendEnchantmentInfo(source, enchantmentRegistry, exactMatch);
@@ -74,19 +75,19 @@ public class GetEnchantInfoCommand {
         }
 
         if (potentialMatches.isEmpty()) {
-            source.sendError(Component.literal("No potential matches found!"));
+            feedback(Component.literal("No potential matches found!"));
 
             return 0;
         }
 
-        source.sendFeedback(Component.literal("No exact match found. Potential matches:"));
+        feedback(Component.literal("No exact match found. Potential matches:"));
 
         for (Enchantment enchantment : potentialMatches) {
             Identifier enchantmentId = enchantmentRegistry.getKey(enchantment);
 
             if (enchantmentId == null) continue;
 
-            source.sendFeedback(Component.empty()
+            feedback(Component.empty()
                     .append(EnchantmentUtils.getEnchantmentName(enchantmentRegistry.wrapAsHolder(enchantment)))
                     .append(" - ")
                     .append(enchantmentId.toString()));
@@ -95,8 +96,8 @@ public class GetEnchantInfoCommand {
         return 1;
     }
 
-    public static int execute(FabricClientCommandSource source, Holder<Enchantment> enchantmentHolder) {
-        Registry<Enchantment> enchantmentRegistry = source.getClient().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+    public static int execute(net.minecraft.commands.SharedSuggestionProvider source, Holder<Enchantment> enchantmentHolder) {
+        Registry<Enchantment> enchantmentRegistry = Minecraft.getInstance().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
 
         sendEnchantmentInfo(source, enchantmentRegistry, enchantmentHolder.value());
 
@@ -144,4 +145,9 @@ public class GetEnchantInfoCommand {
 
         return text;
     }
+    private static void feedback(net.minecraft.network.chat.Component message) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null) minecraft.player.sendSystemMessage(message);
+    }
+
 }

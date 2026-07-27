@@ -1,9 +1,10 @@
 package io.github.brainage04.commands;
 
+import net.minecraft.client.Minecraft;
+
 import io.github.brainage04.GetEnchantInfo;
 import io.github.brainage04.config.ModConfigManager;
 import io.github.brainage04.util.EnchantmentUtils;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -20,11 +21,11 @@ public class BlacklistedEnchantsCommand {
         return blacklistedEnchants;
     }
 
-    public static int executeAdd(FabricClientCommandSource source, Holder<Enchantment> enchantmentHolder) {
+    public static int executeAdd(net.minecraft.commands.SharedSuggestionProvider source, Holder<Enchantment> enchantmentHolder) {
         Enchantment enchantment = enchantmentHolder.value();
 
         if (blacklistedEnchants.contains(enchantment)) {
-            source.sendError(EnchantmentUtils.getEnchantmentName(enchantmentHolder)
+            feedback(EnchantmentUtils.getEnchantmentName(enchantmentHolder)
                     .append(" is already blacklisted!"));
 
             return 0;
@@ -33,7 +34,7 @@ public class BlacklistedEnchantsCommand {
         blacklistedEnchants.add(enchantment);
         GetEnchantInfo.MOD_CONFIG.blacklistedEnchantmentIds.add(enchantmentId(enchantmentHolder));
 
-        source.sendFeedback(Component.empty()
+        feedback(Component.empty()
                 .append(EnchantmentUtils.getEnchantmentName(enchantmentHolder))
                 .append(" is now blacklisted."));
 
@@ -42,11 +43,11 @@ public class BlacklistedEnchantsCommand {
         return 1;
     }
 
-    public static int executeRemove(FabricClientCommandSource source, Holder<Enchantment> enchantmentHolder) {
+    public static int executeRemove(net.minecraft.commands.SharedSuggestionProvider source, Holder<Enchantment> enchantmentHolder) {
         Enchantment enchantment = enchantmentHolder.value();
 
         if (!blacklistedEnchants.contains(enchantment)) {
-            source.sendError(EnchantmentUtils.getEnchantmentName(enchantmentHolder)
+            feedback(EnchantmentUtils.getEnchantmentName(enchantmentHolder)
                     .append(" is not blacklisted!"));
 
             return 0;
@@ -55,7 +56,7 @@ public class BlacklistedEnchantsCommand {
         blacklistedEnchants.remove(enchantment);
         GetEnchantInfo.MOD_CONFIG.blacklistedEnchantmentIds.remove(enchantmentId(enchantmentHolder));
 
-        source.sendFeedback(Component.empty()
+        feedback(Component.empty()
                 .append(EnchantmentUtils.getEnchantmentName(enchantmentHolder))
                 .append(" is no longer blacklisted."));
 
@@ -64,19 +65,19 @@ public class BlacklistedEnchantsCommand {
         return 1;
     }
 
-    public static int executeQuery(FabricClientCommandSource source) {
+    public static int executeQuery(net.minecraft.commands.SharedSuggestionProvider source) {
         if (blacklistedEnchants.isEmpty()) {
-            source.sendFeedback(Component.literal("No blacklisted enchantments."));
+            feedback(Component.literal("No blacklisted enchantments."));
 
             return 1;
         }
 
-        Registry<Enchantment> enchantmentRegistry = source.getClient().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        Registry<Enchantment> enchantmentRegistry = Minecraft.getInstance().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
 
-        source.sendFeedback(Component.literal("Enchantment blacklist:"));
+        feedback(Component.literal("Enchantment blacklist:"));
 
         for (Enchantment enchantment : blacklistedEnchants) {
-            source.sendFeedback(Component.literal(" - ")
+            feedback(Component.literal(" - ")
                     .append(EnchantmentUtils.getEnchantmentName(enchantmentRegistry.wrapAsHolder(enchantment))));
         }
 
@@ -88,4 +89,9 @@ public class BlacklistedEnchantsCommand {
                 .map(key -> key.identifier().toString())
                 .orElseGet(enchantmentHolder::getRegisteredName);
     }
+    private static void feedback(net.minecraft.network.chat.Component message) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player != null) minecraft.player.sendSystemMessage(message);
+    }
+
 }

@@ -16,7 +16,7 @@
 	"environment": "client",
 	"entrypoints": {
 		"client": [
-			"io.github.brainage04.GetEnchantInfo"
+			"io.github.brainage04.getenchantinfo.fabric.GetEnchantInfoFabric"
 		]
 	},
 	"depends": {

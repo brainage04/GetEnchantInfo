@@ -88,3 +88,9 @@ Enchantment blacklist:
 `/blacklistedenchants add <enchantmentId>` - Adds an enchant to the blacklist (if it is not already blacklisted).
 
 `/blacklistedenchants remove <enchantmentId>` - Removes an enchant from the blacklist (if it is blacklisted).
+
+# Installation
+GetEnchantInfo is client-only and is available for both Fabric and NeoForge. Install the JAR matching your loader on the client; it can connect to vanilla and modded servers without server installation.
+
+## Migrating from the Fabric-only release
+Remove the old JAR before switching loaders and install exactly one matching artifact: `getenchantinfo-<version>.jar` for Fabric (which requires Fabric API) or `getenchantinfo-neoforge-<version>.jar` for NeoForge. GetEnchantInfo remains client-only; do not install it on the server. The mod ID and `config/getenchantinfo.json` configuration path are unchanged, so existing configuration is retained when both loaders use the same game directory. A root `./gradlew build` emits both artifacts under `build/libs`.
