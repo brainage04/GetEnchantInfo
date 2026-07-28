@@ -5,7 +5,7 @@ import io.github.brainage04.fabricmoddingconventions.ClientGameTestRecorder;
 import io.github.brainage04.fabricmoddingconventions.ClientGameTestServers;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
-import net.fabricmc.fabric.api.client.gametest.v1.context.TestDedicatedServerContext;
+
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -27,56 +27,53 @@ public final class GetEnchantInfoClientGameTest implements FabricClientGameTest 
     public void runTest(ClientGameTestContext context) {
         Properties serverProperties = ClientGameTestServers.flatServerProperties();
 
-        try (TestDedicatedServerContext server = context.worldBuilder().createServer(serverProperties)) {
-            ClientGameTestServers.connectToDedicatedServer(context, server, "GetEnchantInfo command recording GameTest");
-            try {
-                server.runOnServer(minecraftServer -> preparePlayer(
-                        minecraftServer.getPlayerList().getPlayers().getFirst(),
-                        minecraftServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
-                ));
-                ClientGameTestServers.assertClientWorldAndPlayerAvailable(context);
-                assertCommandsAndDefaults(context);
-                context.waitTicks(20);
-
-                ClientGameTestRecorder.startRecording(context);
-                ClientGameTestRecorder.showStep(
-                        context,
-                        "getenchantinfo.item",
-                        "Enchanted sword ready",
-                        "A Sharpness V and Unbreaking III diamond sword is selected for enchantment analysis"
-                );
-                context.waitTicks(20);
-
-                runCommand(context, "getenchants");
-                ClientGameTestRecorder.showStep(
-                        context,
-                        "getenchantinfo.compatible",
-                        "Compatible enchantments",
-                        "/getenchants renders compatible enchantments and conflict groups for the selected sword"
-                );
-                context.waitTicks(40);
-
-                runCommand(context, "getenchantinfo minecraft:sharpness");
-                ClientGameTestRecorder.showStep(
-                        context,
-                        "getenchantinfo.details",
-                        "Sharpness details",
-                        "/getenchantinfo renders the enchantment ID, maximum level, incompatibilities, and supported items"
-                );
-                context.waitTicks(40);
-
-                runCommand(context, "blacklistedenchants query");
-                ClientGameTestRecorder.showStep(
-                        context,
-                        "getenchantinfo.blacklist",
-                        "Default enchantment blacklist",
-                        "/blacklistedenchants query renders the default excluded enchantments"
-                );
-                context.waitTicks(40);
-            } finally {
-                ClientGameTestServers.disconnectFromDedicatedServer(context);
-            }
-        }
+        ClientGameTestServers.withDedicatedServer(context, serverProperties, "GetEnchantInfo command recording GameTest", server -> { try {
+            server.runOnServer(minecraftServer -> preparePlayer(
+                    minecraftServer.getPlayerList().getPlayers().getFirst(),
+                    minecraftServer.registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
+            ));
+            ClientGameTestServers.assertClientWorldAndPlayerAvailable(context);
+            assertCommandsAndDefaults(context);
+            context.waitTicks(20);
+        
+            ClientGameTestRecorder.startRecording(context);
+            ClientGameTestRecorder.showStep(
+                    context,
+                    "getenchantinfo.item",
+                    "Enchanted sword ready",
+                    "A Sharpness V and Unbreaking III diamond sword is selected for enchantment analysis"
+            );
+            context.waitTicks(20);
+        
+            runCommand(context, "getenchants");
+            ClientGameTestRecorder.showStep(
+                    context,
+                    "getenchantinfo.compatible",
+                    "Compatible enchantments",
+                    "/getenchants renders compatible enchantments and conflict groups for the selected sword"
+            );
+            context.waitTicks(40);
+        
+            runCommand(context, "getenchantinfo minecraft:sharpness");
+            ClientGameTestRecorder.showStep(
+                    context,
+                    "getenchantinfo.details",
+                    "Sharpness details",
+                    "/getenchantinfo renders the enchantment ID, maximum level, incompatibilities, and supported items"
+            );
+            context.waitTicks(40);
+        
+            runCommand(context, "blacklistedenchants query");
+            ClientGameTestRecorder.showStep(
+                    context,
+                    "getenchantinfo.blacklist",
+                    "Default enchantment blacklist",
+                    "/blacklistedenchants query renders the default excluded enchantments"
+            );
+            context.waitTicks(40);
+        } finally {
+            ;
+        } });
     }
 
     private static void preparePlayer(ServerPlayer player, Registry<Enchantment> enchantments) {
