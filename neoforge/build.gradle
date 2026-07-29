@@ -1,6 +1,5 @@
 plugins { id 'dev.architectury.loom-no-remap'; id 'dev.architectury.loom'; id 'io.github.brainage04.mod-publishing' version "${fabricmoddingconventions_version}" }
 base { archivesName="${rootProject.archives_base_name}-neoforge" }
-sourceSets { main { java.srcDir project.file('src/main/java'); resources.srcDir project.file('src/main/resources') } }
 loom { neoForge { }; mods { main { sourceSet sourceSets.main; sourceSet project(':common').sourceSets.main } }; runs { client { runDir 'run/client' } } }
 configurations { common { canBeResolved=true; canBeConsumed=false }; compileClasspath.extendsFrom common }
 modPublishing {
